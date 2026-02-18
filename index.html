@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texas Hold'em: Persona Edition</title>
+  <style>
+    /* ===== CSS Variables ===== */
+    :root {
+      --bg-dark: #0d0d1a;
+      --felt-green: #2d5a27;
+      --felt-border: #1a3d15;
+      --card-white: #f5f5f0;
+      --card-red: #d32f2f;
+      --card-black: #1a1a1a;
+      --gold: #ffd700;
+      --chip-green: #2e7d32;
+      --chip-black: #222;
+      --chip-purple: #7b1fa2;
+      --chip-yellow: #f9a825;
+      --text-primary: #e0e0e0;
+      --text-secondary: #999;
+      --accent-blue: #1e88e5;
+      --accent-glow: rgba(30, 136, 229, 0.5);
+      --active-glow: rgba(255, 215, 0, 0.6);
+      --winner-glow: rgba(76, 175, 80, 0.8);
+      --danger: #e53935;
+      --seat-bg: rgba(20, 20, 40, 0.85);
+      --seat-border: rgba(255, 255, 255, 0.1);
+      --hud-bg: rgba(15, 15, 30, 0.95);
+    }
+
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ===== Config Screen ===== */
+    #config-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 70%);
+      text-align: center;
+      padding: 2rem;
+    }
+
+    #config-screen.hidden { display: none; }
+
+    #config-screen h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gold);
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+      margin-bottom: 0.25rem;
+    }
+
+    #config-screen .tagline {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      font-style: italic;
+    }
+
+    .config-card {
+      background: rgba(30, 30, 60, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      max-width: 460px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+    }
+
+    .config-card label {
+      display: block;
+      text-align: left;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .config-card input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-primary);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .config-card input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    #start-btn {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-blue), #1565c0);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    #start-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    #start-btn:active { transform: translateY(0); }
+
+    .config-desc {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ===== Game Container ===== */
+    #game-container {
+      display: none;
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(ellipse at center, #1a1a3e 0%, var(--bg-dark) 70%);
+      overflow: hidden;
+    }
+
+    #game-container.active { display: block; }
+
+    /* ===== Poker Table ===== */
+    #poker-table {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 78%;
+      height: 56%;
+      background: radial-gradient(ellipse at center, #3a7a33 0%, var(--felt-green) 50%, var(--felt-border) 100%);
+      border-radius: 50%;
+      border: 12px solid #3d2b1f;
+      box-shadow:
+        inset 0 0 60px rgba(0, 0, 0, 0.3),
+        0 0 40px rgba(0, 0, 0, 0.5),
+        0 0 0 4px #2a1f14,
+        0 0 0 16px #1a1410;
+    }
+
+    /* ===== Table Center (community cards + pot) ===== */
+    #table-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 5;
+    }
+
+    #community-cards {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+      min-height: 80px;
+    }
+
+    #community-cards .card-slot {
+      width: 56px;
+      height: 80px;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease-out;
+    }
+
+    #community-cards .card-slot.dealt {
+      border: none;
+      animation: cardDealIn 0.3s ease-out;
+    }
+
+    @keyframes cardDealIn {
+      from { transform: scale(0) rotate(10deg); opacity: 0; }
+      to { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    #pot-display {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.35);
+      padding: 4px 16px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    /* ===== Seat Positions ===== */
+    .seat {
+      position: absolute;
+      width: 120px;
+      text-align: center;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+
+    .seat-inner {
+      background: var(--seat-bg);
+      border: 2px solid var(--seat-border);
+      border-radius: 12px;
+      padding: 6px 8px;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .seat.active-turn .seat-inner {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px var(--active-glow), 0 0 40px rgba(255, 215, 0, 0.2);
+    }
+
+    .seat.winner .seat-inner {
+      border-color: #4caf50;
+      box-shadow: 0 0 25px var(--winner-glow);
+      animation: winnerGlow 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes winnerGlow {
+      from { box-shadow: 0 0 15px var(--winner-glow); }
+      to { box-shadow: 0 0 35px var(--winner-glow), 0 0 60px rgba(76, 175, 80, 0.3); }
+    }
+
+    .seat.folded .seat-inner { opacity: 0.4; }
+    .seat.eliminated .seat-inner { opacity: 0.15; }
+
+    .seat .player-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .seat .chip-count {
+      font-size: 0.68rem;
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .seat .cards-area {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+      margin: 4px 0;
+      min-height: 48px;
+    }
+
+    .seat .cards-area svg {
+      width: 34px;
+      height: 48px;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+    }
+
+    /* Role badges */
+    .seat .badges {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      color: white;
+      text-transform: uppercase;
+    }
+
+    .badge-d { background: var(--gold); color: #000; }
+    .badge-sb { background: #42a5f5; }
+    .badge-bb { background: #ef5350; }
+
+    /* Action indicator */
+    .action-indicator {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 10px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 20;
+    }
+
+    .action-indicator.visible {
+      opacity: 1;
+      animation: actionFade 2s forwards;
+    }
+
+    @keyframes actionFade {
+      0% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .action-fold { background: var(--danger); color: white; }
+    .action-check { background: #66bb6a; color: white; }
+    .action-call { background: #42a5f5; color: white; }
+    .action-raise { background: var(--gold); color: #000; }
+    .action-allin { background: linear-gradient(135deg, #e53935, #ff6f00); color: white; }
+
+    /* Thinking indicator */
+    .thinking-indicator {
+      display: none;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .thinking-indicator.visible { display: block; }
+
+    .thinking-dots::after {
+      content: '';
+      animation: thinkDots 1.2s steps(4, end) infinite;
+    }
+
+    @keyframes thinkDots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+
+    /* ===== Left Panel (Blinds/Level) ===== */
+    #left-panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--hud-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.78rem;
+      z-index: 50;
+      min-width: 180px;
+    }
+
+    #left-panel .level-title {
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+
+    #left-panel .blinds-info {
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    #timer-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    #timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), #42a5f5);
+      border-radius: 3px;
+      transition: width 1s linear;
+      width: 100%;
+    }
+
+    #timer-text {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    /* ===== Right Panel (Chat) ===== */
+    #right-panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 240px;
+      max-height: 55vh;
+      background: var(--hud-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #right-panel .chat-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    #chat-log {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 40vh;
+      padding-right: 4px;
+    }
+
+    #chat-log::-webkit-scrollbar { width: 4px; }
+    #chat-log::-webkit-scrollbar-track { background: transparent; }
+    #chat-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+    .chat-msg {
+      font-size: 0.75rem;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: opacity 4s ease-out;
+    }
+
+    .chat-msg .chat-name {
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .chat-msg.player .chat-name { color: var(--gold); }
+
+    .chat-msg.faded { opacity: 0.3; }
+
+    #chat-presets {
+      margin-top: 8px;
+      display: flex;
+      gap: 4px;
+    }
+
+    .chat-preset-btn {
+      flex: 1;
+      padding: 5px 2px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      font-size: 0.6rem;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .chat-preset-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    .chat-popover {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      background: var(--hud-bg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 4px;
+      z-index: 100;
+      margin-bottom: 4px;
+    }
+
+    .chat-popover.open { display: block; }
+
+    .chat-popover-item {
+      padding: 5px 8px;
+      font-size: 0.68rem;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-primary);
+      transition: background 0.15s;
+    }
+
+    .chat-popover-item:hover { background: rgba(255, 255, 255, 0.1); }
+
+    /* ===== Bottom HUD (Human player controls) ===== */
+    #bottom-hud {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--hud-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 50;
+    }
+
+    #human-cards {
+      display: flex;
+      gap: 6px;
+    }
+
+    #human-cards svg {
+      width: 52px;
+      height: 74px;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    #pot-odds-display {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .action-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .action-btn:not(:disabled):hover { transform: translateY(-1px); }
+    .action-btn:not(:disabled):active { transform: translateY(0); }
+
+    #btn-fold { background: var(--danger); color: white; }
+    #btn-check-call { background: var(--accent-blue); color: white; }
+    #btn-raise { background: var(--gold); color: #000; }
+
+    .raise-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #raise-slider {
+      width: 100px;
+      accent-color: var(--gold);
+    }
+
+    #raise-amount {
+      width: 70px;
+      padding: 4px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    /* ===== Level Up Banner ===== */
+    #level-banner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid var(--gold);
+      border-radius: 16px;
+      padding: 2rem 3rem;
+      text-align: center;
+      z-index: 200;
+      animation: bannerIn 0.4s ease-out;
+    }
+
+    #level-banner.visible { display: block; }
+
+    @keyframes bannerIn {
+      from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    #level-banner h2 {
+      color: var(--gold);
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    #level-banner p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    /* ===== Tournament Results Modal ===== */
+    #results-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #results-modal.visible { display: flex; }
+
+    .results-card {
+      background: linear-gradient(135deg, #1a1a3e, #0d0d2a);
+      border: 2px solid var(--gold);
+      border-radius: 20px;
+      padding: 3rem;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .results-card h1 {
+      font-size: 2rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+
+    .results-card .placement {
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .results-standings {
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .results-standings .standing-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+    }
+
+    .standing-row .place { color: var(--gold); font-weight: 600; min-width: 30px; }
+    .standing-row .name { flex: 1; }
+    .standing-row .chips { color: var(--text-secondary); }
+
+    #play-again-btn {
+      padding: 0.8rem 2rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-blue), #1565c0);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    #play-again-btn:hover { box-shadow: 0 4px 20px var(--accent-glow); }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Config Screen ===== -->
+  <div id="config-screen">
+    <h1>TEXAS HOLD'EM</h1>
+    <p class="tagline">Persona Edition</p>
+    <div class="config-card">
+      <label for="api-key-input">Gemini API Key</label>
+      <input type="password" id="api-key-input" placeholder="Enter your Gemini API key..." autocomplete="off" />
+      <button id="start-btn">Start Tournament</button>
+      <p class="config-desc">
+        Face 9 of 15 unique AI poker personalities in a single-table tournament.
+        Each NPC has a distinct playstyle, from tight rocks to chaotic maniacs.
+        Can you read their tells and outlast them all?
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== Game Container ===== -->
+  <div id="game-container">
+    <!-- Left Panel: Level & Blinds -->
+    <div id="left-panel">
+      <div class="level-title" id="level-display">Level 1</div>
+      <div class="blinds-info" id="blinds-display">Blinds: $25 / $50</div>
+      <div id="ante-display" style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:6px;display:none;">Ante: $0</div>
+      <div id="timer-bar-container">
+        <div id="timer-bar"></div>
+      </div>
+      <div id="timer-text">5:00</div>
+    </div>
+
+    <!-- Right Panel: Chat -->
+    <div id="right-panel">
+      <div class="chat-title">Table Chat</div>
+      <div id="chat-log"></div>
+      <div id="chat-presets">
+        <button class="chat-preset-btn" data-category="friendly">
+          Friendly
+          <div class="chat-popover" id="popover-friendly">
+            <div class="chat-popover-item" data-msg="Nice hand!">Nice hand!</div>
+            <div class="chat-popover-item" data-msg="Good game everyone">Good game everyone</div>
+            <div class="chat-popover-item" data-msg="Just warming up...">Just warming up...</div>
+          </div>
+        </button>
+        <button class="chat-preset-btn" data-category="tactical">
+          Tactical
+          <div class="chat-popover" id="popover-tactical">
+            <div class="chat-popover-item" data-msg="I'll remember that bet sizing">I'll remember that sizing</div>
+            <div class="chat-popover-item" data-msg="Interesting play">Interesting play</div>
+            <div class="chat-popover-item" data-msg="Are you sure about that?">Are you sure about that?</div>
+          </div>
+        </button>
+        <button class="chat-preset-btn" data-category="reactionary">
+          React
+          <div class="chat-popover" id="popover-reactionary">
+            <div class="chat-popover-item" data-msg="That's a bad beat!">That's a bad beat!</div>
+            <div class="chat-popover-item" data-msg="I can't believe that!">I can't believe that!</div>
+            <div class="chat-popover-item" data-msg="OK OK I see you...">OK OK I see you...</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Poker Table -->
+    <div id="poker-table">
+      <div id="table-center">
+        <div id="community-cards">
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+          <div class="card-slot"></div>
+        </div>
+        <div id="pot-display">POT: $0</div>
+      </div>
+    </div>
+
+    <!-- Seats will be injected by ui.js -->
+    <div id="seats-container"></div>
+
+    <!-- Bottom HUD -->
+    <div id="bottom-hud">
+      <div id="human-cards"></div>
+      <div id="pot-odds-display"></div>
+      <div class="action-buttons">
+        <button class="action-btn" id="btn-fold" disabled>Fold</button>
+        <button class="action-btn" id="btn-check-call" disabled>Check</button>
+        <button class="action-btn" id="btn-raise" disabled>Raise</button>
+      </div>
+      <div class="raise-controls">
+        <input type="range" id="raise-slider" min="0" max="5000" value="0" disabled />
+        <input type="number" id="raise-amount" value="0" disabled />
+      </div>
+    </div>
+
+    <!-- Level Up Banner -->
+    <div id="level-banner">
+      <h2 id="banner-level">Level Up!</h2>
+      <p id="banner-blinds">Blinds: $50 / $100</p>
+    </div>
+
+    <!-- Tournament Results Modal -->
+    <div id="results-modal">
+      <div class="results-card">
+        <h1 id="results-title">Tournament Complete</h1>
+        <p class="placement" id="results-placement"></p>
+        <div class="results-standings" id="results-standings"></div>
+        <button id="play-again-btn">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Game Script ===== -->
+  <script type="module">
+    import GameEngine from './src/engine.js';
+    import NPCEngine from './src/npc.js';
+    import UIController from './src/ui.js';
+
+    let gameEngine, npcEngine, ui;
+
+    // Start Tournament button
+    document.getElementById('start-btn').addEventListener('click', () => {
+      const apiKey = document.getElementById('api-key-input').value.trim();
+      if (!apiKey) {
+        document.getElementById('api-key-input').style.borderColor = '#e53935';
+        document.getElementById('api-key-input').placeholder = 'API key is required';
+        return;
+      }
+
+      // Store API key in sessionStorage
+      sessionStorage.setItem('geminiApiKey', apiKey);
+
+      // Hide config, show game
+      document.getElementById('config-screen').classList.add('hidden');
+      document.getElementById('game-container').classList.add('active');
+
+      // Create engine instances
+      gameEngine = new GameEngine({
+        numPlayers: 10,
+        startingChips: 5000,
+        startingBlinds: { sb: 25, bb: 50, ante: 0 },
+        levelDuration: 300, // 5 minutes in seconds
+        playerName: 'You'
+      });
+      npcEngine = new NPCEngine({ geminiApiKey: apiKey });
+      ui = new UIController(gameEngine, npcEngine);
+
+      // Initialize UI
+      ui.init();
+
+      // Wire up engine events
+      // Guard against stacked setTimeout calls during auto-advance
+      let advancing = false;
+
+      gameEngine.on('stateChange', (state) => {
+        ui.render(state);
+
+        if (state.phase === 'waiting' || state.phase === 'handComplete') return;
+
+        // Showdown phase: display cards briefly, then award pot and wrap up the hand
+        if (state.phase === 'showdown' && !advancing) {
+          advancing = true;
+          setTimeout(() => {
+            // Keep advancing=true during these calls — awardPot() emits its own stateChange
+            // (still phase='showdown') which would re-enter this block and loop if advancing=false
+            gameEngine.awardPot();
+            gameEngine.finishHand();
+            advancing = false;
+          }, 2000);
+          return;
+        }
+
+        // Street is complete (actionSeat === -1): advance to next street or go to showdown
+        if (state.actionSeat === -1 && !advancing) {
+          advancing = true;
+          setTimeout(() => {
+            advancing = false;
+            const current = gameEngine.getGameState();
+            if (current.actionSeat !== -1) return; // already advanced by another path
+            if (['preflop', 'flop', 'turn'].includes(current.phase)) {
+              gameEngine.advanceStreet();
+            } else if (current.phase === 'river') {
+              gameEngine.evaluateShowdown();
+            }
+          }, 800);
+          return;
+        }
+
+        // NPC turn
+        if (state.actionSeat > 0) {
+          handleNPCTurn(state);
+        }
+      });
+
+      // handComplete fires with { winners } (not full state) — re-fetch state for render
+      gameEngine.on('handComplete', () => {
+        ui.render(gameEngine.getGameState());
+        setTimeout(() => gameEngine.startHand(), 2500);
+      });
+
+      gameEngine.on('tournamentComplete', (finalState) => {
+        ui.showTournamentResults(finalState);
+      });
+
+      gameEngine.on('levelUp', (level, blinds) => {
+        ui.showLevelUpBanner(level, blinds);
+      });
+
+      // Assign NPC personas and start
+      npcEngine.assignPersonas([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      gameEngine.startTournament();
+      gameEngine.startHand();
+    });
+
+    // Handle NPC turn
+    async function handleNPCTurn(state) {
+      const seat = state.actionSeat;
+      if (!state.players[seat] || state.players[seat].isFolded || state.players[seat].isEliminated || state.players[seat].isAllIn) return;
+
+      const holeCards = state.players[seat].holeCards;
+      ui.showThinking(seat);
+
+      try {
+        const decision = await npcEngine.getAction(seat, state, holeCards);
+        ui.hideThinking(seat);
+        if (decision.chat) {
+          ui.showChat(seat, decision.chat);
+        }
+        gameEngine.processAction(seat, decision.action, decision.amount);
+      } catch (err) {
+        console.error(`NPC seat ${seat} error:`, err);
+        ui.hideThinking(seat);
+        // Default to fold on error
+        gameEngine.processAction(seat, 'fold');
+      }
+    }
+
+    // Play Again button
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>
