@@ -456,7 +456,10 @@ class GameEngine extends EventEmitter {
     // Check if only one player remains
     const remaining = this._playersInHand();
     if (remaining.length === 1) {
-      // Last player standing — wins without showdown
+      // Last player standing — wins without showdown; set winners so awardPot() can run
+      const winner = this.players[remaining[0]];
+      const totalPot = this.pot + this.sidePots.reduce((s, sp) => s + sp.amount, 0);
+      this.winners = [{ seatIndex: winner.seatIndex, amount: totalPot, handName: 'Last Standing' }];
       this.phase = 'showdown';
       this._emitState();
       return;

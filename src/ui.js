@@ -509,33 +509,37 @@ export default class UIController {
 function renderCard(card, large) {
   if (!card || !card.rank || !card.suit) return '';
 
-  const w = large ? 70 : 48;
-  const h = large ? 100 : 68;
+  const w = large ? 90 : 62;
+  const h = large ? 128 : 89;
   const rank = RANK_DISPLAY[card.rank] || card.rank;
   const suit = SUIT_SYMBOLS[card.suit] || card.suit;
   const color = SUIT_COLORS[card.suit] || '#000';
 
-  const fontSize = large ? 14 : 10;
-  const suitSize = large ? 24 : 16;
+  const rankSize = large ? 20 : 17;
+  const cornerSuitSize = large ? 17 : 14;
+  const centerSuitSize = large ? 42 : 32;
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="68" height="98" rx="5" ry="5"
-      fill="#f5f5f0" stroke="#ccc" stroke-width="1"/>
-    <text x="6" y="${fontSize + 4}" font-size="${fontSize}" font-weight="700"
+    <rect x="1" y="1" width="68" height="98" rx="6" ry="6"
+      fill="white" stroke="#bbb" stroke-width="1.5"/>
+    <text x="5" y="${rankSize + 2}" font-size="${rankSize}" font-weight="800"
       fill="${color}" font-family="Georgia, serif">${rank}</text>
-    <text x="6" y="${fontSize + 18}" font-size="${fontSize - 2}"
+    <text x="5" y="${rankSize + cornerSuitSize + 4}" font-size="${cornerSuitSize}"
       fill="${color}" font-family="serif">${suit}</text>
-    <text x="35" y="58" font-size="${suitSize}" text-anchor="middle"
+    <text x="35" y="60" font-size="${centerSuitSize}" text-anchor="middle" dominant-baseline="middle"
       fill="${color}" font-family="serif">${suit}</text>
-    <text x="64" y="${96 - fontSize}" font-size="${fontSize}" font-weight="700"
-      fill="${color}" font-family="Georgia, serif" text-anchor="end"
-      transform="rotate(180 64 ${96 - fontSize - 4})">${rank}</text>
+    <g transform="rotate(180, 35, 50)">
+      <text x="5" y="${rankSize + 2}" font-size="${rankSize}" font-weight="800"
+        fill="${color}" font-family="Georgia, serif">${rank}</text>
+      <text x="5" y="${rankSize + cornerSuitSize + 4}" font-size="${cornerSuitSize}"
+        fill="${color}" font-family="serif">${suit}</text>
+    </g>
   </svg>`;
 }
 
 function renderCardBack() {
-  return `<svg width="48" height="68" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="68" height="98" rx="5" ry="5"
+  return `<svg width="62" height="89" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="68" height="98" rx="6" ry="6"
       fill="#1a237e" stroke="#0d1642" stroke-width="1.5"/>
     <rect x="5" y="5" width="60" height="90" rx="3" ry="3"
       fill="none" stroke="#3949ab" stroke-width="0.8"/>

@@ -633,6 +633,54 @@
       font-size: 1rem;
     }
 
+    /* ===== Winner Banner ===== */
+    #winner-banner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.92);
+      border: 2px solid #4caf50;
+      border-radius: 16px;
+      padding: 1.6rem 2.8rem;
+      text-align: center;
+      z-index: 201;
+      min-width: 260px;
+      animation: bannerIn 0.35s ease-out;
+    }
+
+    #winner-banner.visible { display: block; }
+
+    #winner-banner .wb-label {
+      color: #4caf50;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    #winner-banner .wb-name {
+      color: var(--gold);
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    #winner-banner .wb-amount {
+      color: #4caf50;
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    #winner-banner .wb-hand {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
     /* ===== Tournament Results Modal ===== */
     #results-modal {
       display: none;
@@ -924,6 +972,11 @@
 
       try {
         const decision = await npcEngine.getAction(seat, state, holeCards);
+        
+        // Add random thinking delay between 0.5 and 3 seconds
+        const delayMs = 500 + Math.random() * 2500; // 500-3000ms
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        
         ui.hideThinking(seat);
         if (decision.chat) {
           ui.showChat(seat, decision.chat);
