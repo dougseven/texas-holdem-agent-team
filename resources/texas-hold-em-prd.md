@@ -98,15 +98,58 @@
 * **Single-File Delivery:** HTML/JS/CSS bundle.  
 * **Asynchronous AI Handling:** Non-blocking async/await for API calls.
 
-### **7.2 Persona Engine (Vertex AI / Gemini 2.5)**
+### **7.2 Persona Engine (Google Generative Language API / Gemini 2.5 Flash)**
 
-* **Persona Memory:** Maintains a "Session Log" per NPC to track player history.  
-* **Weighted Chat Probability:** \* **High (40-60%):** Chatty Cathy, Psycho Sid.  
+> **Implementation Note:** The system uses the Google Generative Language REST API (`generativelanguage.googleapis.com`) with model `gemini-2.5-flash`, not Vertex AI. API key is accepted at the config screen and stored in `sessionStorage`.
+
+* **Persona Memory:** Maintains a "Session Log" (last 10 actions) per NPC; injected into every Gemini call as `sessionContext`.
+* **Weighted Chat Probability:**
+  * **High (40-60%):** Chatty Cathy, Psycho Sid.
   * **Low (2-5%):** Earl, Calculator Cal.
+* **Local Fallback:** When Gemini API is unavailable or returns an error, a pure-JS fallback fires that uses persona VPIP/PFR stats to decide actions.
+* **NPC Thinking Delay:** A random 0.5–3.0 second delay is applied after the API returns to simulate human deliberation and mask actual latency variance.
 
 ### **7.3 Asset Requirements**
 
-* **SVG Rendering:** For cards and chips.
+* **SVG Rendering:** Cards rendered inline as SVG (no external files). Chip counts displayed as text overlays.
+
+## **8\. Implemented Features & Behavioral Details**
+
+### **8.1 Per-Round Winner Notification**
+
+At the end of each hand, before the next hand begins, a winner banner is displayed showing:
+* Winner's display name
+* Amount won (formatted with `$` and locale separators)
+* Winning hand name (e.g., "Full House", "Last Standing" for uncontested pots)
+
+The banner auto-dismisses after ~2.5 seconds before the next hand starts. The winning seat also receives a green glow animation (`winnerGlow`).
+
+### **8.2 Player HUD Enhancements**
+
+* **Pot Odds Display:** During the human player's turn, real-time pot odds (as a percentage of pot + call amount) are shown in the bottom HUD.
+* **Action Indicators:** Each seat displays a floating label (FOLD / CHECK / CALL / RAISE $X / ALL-IN) on action, fading out after 2 seconds.
+
+### **8.3 Blind Structure Details**
+
+* **BB Ante Style:** When antes are active (Level 6+), antes are collected from all active players each hand (not a dedicated ante player).
+* **Dead Button Rule:** If the SB seat is eliminated, the button does not advance for one hand.
+* **Heads-Up Rules:** Dealer posts SB and acts first pre-flop; BB acts first post-flop.
+* **12-Level Structure:** Levels 1–12 defined, escalating from $25/$50 (no ante) to $2,000/$4,000 (ante $4,000).
+
+### **8.4 Persona Behavioral Details**
+
+* **Angry Andy (Tilter):** Enters "tilted" state (VPIP 90%, PFR 85%) for ~8 hands when losing more than 20% of starting stack in a single pot. Recovers faster if a pot is won while tilted.
+* **Lucky Larry (Superstitious):** Enters "confident" state (VPIP +25%, PFR +20%) for 4 hands after winning a pot. Returns to baseline after a loss.
+* **Copycat Carl (Mirror):** After observing 3+ hands of the player to his right, mirrors their actual observed VPIP/PFR. Requires `updateObservedStats()` to be called after each hand.
+
+### **8.5 Chat Presets**
+
+The human player has three chat categories with preset messages:
+* **Friendly:** "Nice hand!", "Good game everyone", "Just warming up..."
+* **Tactical:** "I'll remember that bet sizing", "Interesting play", "Are you sure about that?"
+* **Reactionary:** "That's a bad beat!", "I can't believe that!", "OK OK I see you..."
+
+NPC responses to player chat are triggered probabilistically based on each NPC's `chatFrequency`.
 
 ## **9\. Architecture & System Flow**
 
