@@ -2,6 +2,10 @@
 
 A psychologically realistic single-player Texas Hold'em tournament experience powered by AI-driven NPC personas. Play against 15 distinct personality archetypes—from tight rocks to aggressive maniacs—in a high-fidelity browser-based poker simulator.
 
+This is an experimental project designed to test the capabilities of Claude Code Agent teams in creating a complex, interactive game with rich NPC behavior. The [Product Requirements Document](resources/texas-hold-em-prd.md) outlines the design vision and feature set in detail. The PRD along with the NPC persona definitions and poker rules reference (can be )found in the `resources/` directory) were given to Claude Code Agent Teams. This initial commit represents the first implementation of the core game engine, NPC behavior, and user interface based on those specifications, plus a couple of bug fixes the Agent Team did upon request. Subsequent commits are the result of discovering new bugs during game play and asking the Agent Team to fix them. 
+
+The README file was written by GitHub Copilot (I was out of Claude tokens at the time).
+
 ## 🎮 Overview
 
 Texas Hold'em: Persona Edition is a single-table tournament (STT) poker game where the challenge comes not just from the cards, but from reading and exploiting 9 unique AI opponents with distinct personalities. Each NPC is powered by advanced persona modeling to create authentic, predictable-yet-realistic opponents that feel like real players.
